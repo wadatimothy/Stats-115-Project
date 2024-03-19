@@ -1,0 +1,52 @@
+---
+title: "project115"
+author: "Alfonso Vieyra"
+date: "3/18/2024"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(bayesrules)
+library(dplyr)
+library(tidyverse)
+vgames_df <- read.csv("./video_games.csv")
+```
+
+### Clean data 
+
+```{r}
+# reading the data in as a dataframe but then reassign data frame with the 
+# variables = review_score, console, length, genres, multiplayer, multiplatform, 
+# online, sales where response is review score
+
+vgames_df <- vgames_df %>% 
+         rename(review_score = Metrics.Review.Score, console = Release.Console, 
+         length = Length.All.PlayStyles.Average, genres = Metadata.Genres, 
+         multiplayer = Features.Max.Players, multiplatform = Features.Multiplatform., 
+         online = Features.Online.,sales = Metrics.Sales)
+
+vgames_df <- vgames_df %>% 
+  select(review_score, console, length, genres, multiplayer, multiplatform, 
+         online, sales)
+
+head(vgames_df)
+```
+
+```{r}
+# Changes genres into a single genre
+for (row in 1:nrow(vgames_df)) {
+  genres <- strsplit(vgames_df$genres[row], split = ",", fixed = TRUE)[[1]]
+  if(length(genres) > 0) { 
+    i <- sample(length(genres), 1) 
+    vgames_df$genres[row] <- genres[i]
+  }
+}
+
+head(vgames_df)
+```
+
+
+```{r}
+colSums(is.na(vgames_df))
+```
