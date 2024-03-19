@@ -24,11 +24,11 @@ vgames_df <- vgames_df %>%
          rename(review_score = Metrics.Review.Score, console = Release.Console, 
          length = Length.All.PlayStyles.Average, genres = Metadata.Genres, 
          multiplayer = Features.Max.Players, multiplatform = Features.Multiplatform., 
-         online = Features.Online.,sales = Metrics.Sales)
+         online = Features.Online.,sales = Metrics.Sales, rating=Release.Rating)
 
 vgames_df <- vgames_df %>% 
   select(review_score, console, length, genres, multiplayer, multiplatform, 
-         online, sales)
+         online, sales, rating)
 
 head(vgames_df)
 ```
@@ -50,3 +50,34 @@ head(vgames_df)
 ```{r}
 colSums(is.na(vgames_df))
 ```
+
+```{r}
+ggplot(vgames_df, aes(x = length, y = review_score)) + 
+  geom_point(size = 0.5) + xlim(0,100)
+```
+
+```{r}
+ggplot(vgames_df, aes(x = sales, y = review_score)) + 
+  geom_point(size = 0.5)
+```
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram()
+```
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(genres ~ ., scales = "free")
+```
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(console ~ ., scales = "free")
+```
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(multiplayer ~ ., scales = "free")
+```
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ ., scales = "free")
+```
+
+
