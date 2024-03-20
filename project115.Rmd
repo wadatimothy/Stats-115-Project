@@ -10,6 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(bayesrules)
 library(dplyr)
 library(tidyverse)
+library(rstanarm)
+library(bayesplot)
+library(broom.mixed)
+library(tidybayes)
 vgames_df <- read.csv("./video_games.csv")
 ```
 
@@ -17,18 +21,16 @@ vgames_df <- read.csv("./video_games.csv")
 
 ```{r}
 # reading the data in as a dataframe but then reassign data frame with the 
-# variables = review_score, console, length, genres, multiplayer, multiplatform, 
-# online, sales where response is review score
+# variables = review_score, console, length, genres, sales where response 
+# is review score
 
 vgames_df <- vgames_df %>% 
          rename(review_score = Metrics.Review.Score, console = Release.Console, 
          length = Length.All.PlayStyles.Average, genres = Metadata.Genres, 
-         multiplayer = Features.Max.Players, multiplatform = Features.Multiplatform., 
-         online = Features.Online.,sales = Metrics.Sales, rating=Release.Rating)
+         sales = Metrics.Sales, rating=Release.Rating)
 
 vgames_df <- vgames_df %>% 
-  select(review_score, console, length, genres, multiplayer, multiplatform, 
-         online, sales, rating)
+  select(review_score, console, length, genres, sales, rating)
 
 head(vgames_df)
 ```
@@ -64,6 +66,7 @@ ggplot(vgames_df, aes(x = sales, y = review_score)) +
 ```{r}
 ggplot(vgames_df, aes(x=review_score)) + geom_histogram()
 ```
+
 ```{r}
 ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(genres ~ ., scales = "free")
 ```
@@ -73,11 +76,325 @@ ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(console ~
 ```
 
 ```{r}
-ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(multiplayer ~ ., scales = "free")
-```
-
-```{r}
 ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ ., scales = "free")
 ```
 
 
+```{r}
+# Using a Normal Regression
+# Priors:
+#   Normal(70,10) for Beta_0c
+#   Vague priors for the other betas
+#   Vague prior for sigma
+# Model 1: X = genres
+
+vgame_model_1 <- stan_glm(
+  review_score ~ genres,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_1)
+mcmc_dens_overlay(vgame_model_1)
+mcmc_acf(vgame_model_1)
+```
+
+```{r}
+tidy(vgame_model_1, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+```{r}
+as.data.frame(vgame_model_1) %>%
+  mutate(Action = `(Intercept)`,
+         Adventure = `(Intercept)` + genresAdventure,
+         Educational = `(Intercept)` + genresEducational,
+         Racing = `(Intercept)` + `genresRacing / Driving`,
+         RPG = `(Intercept)` + `genresRole-Playing (RPG)`,
+         Simulation = `(Intercept)` + genresSimulation,
+         Sports = `(Intercept)` + genresSports,
+         Strategy = `(Intercept)` + genresStrategy) %>%
+  mcmc_areas(pars = c("Action", "Adventure", "Educational", "Racing", "RPG",
+                      "Simulation", "Sports", "Strategy"))
+```
+
+
+```{r}
+# Model 2: X = sales
+vgame_model_2 <- stan_glm(
+  review_score ~ sales,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_2)
+mcmc_dens_overlay(vgame_model_2)
+mcmc_acf(vgame_model_2)
+```
+
+```{r}
+tidy(vgame_model_2, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+```{r}
+vgames_df %>%
+  add_fitted_draws(vgame_model_2, n = 100) %>%
+  ggplot(aes(x=sales, y=review_score)) +
+  geom_point(size=0.5) +
+  geom_line(aes(y=.value, group=.draw))
+```
+
+
+```{r}
+# Model 3: X = length
+vgame_model_3 <- stan_glm(
+  review_score ~ length,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_3)
+mcmc_dens_overlay(vgame_model_3)
+mcmc_acf(vgame_model_3)
+```
+
+```{r}
+tidy(vgame_model_3, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+```{r}
+vgames_df %>%
+  add_fitted_draws(vgame_model_3, n = 100) %>%
+  ggplot(aes(x=length, y=review_score)) +
+  geom_point(size=0.5) +
+  geom_line(aes(y=.value, group=.draw)) + 
+  xlim(0,100)
+```
+
+
+```{r}
+# Model 4: X = console
+
+vgame_model_4 <- stan_glm(
+  review_score ~ console,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_4)
+mcmc_dens_overlay(vgame_model_4)
+mcmc_acf(vgame_model_4)
+```
+
+```{r}
+tidy(vgame_model_4, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+```{r}
+as.data.frame(vgame_model_4) %>%
+  mutate(DS = `(Intercept)`,
+         Wii = `(Intercept)` + `consoleNintendo Wii`,
+         PS3 = `(Intercept)` + `consolePlayStation 3`,
+         PSP = `(Intercept)` + `consoleSony PSP`,
+         X360 = `(Intercept)` + consoleX360) %>%
+  mcmc_areas(pars = c("DS", "Wii", "PS3", "PSP", "X360"))
+```
+
+```{r}
+# Model 5: X = rating
+
+vgame_model_5 <- stan_glm(
+  review_score ~ rating,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_5)
+mcmc_dens_overlay(vgame_model_5)
+mcmc_acf(vgame_model_5)
+```
+
+```{r}
+tidy(vgame_model_5, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+```{r}
+as.data.frame(vgame_model_5) %>%
+  mutate(ratingE = `(Intercept)`,
+         ratingM = `(Intercept)` + ratingM,
+         ratingT = `(Intercept)` + ratingT) %>%
+  mcmc_areas(pars = c("ratingE", "ratingM", "ratingT"))
+```
+
+```{r}
+# Model 6: X = sales + length
+vgame_model_6 <- stan_glm(
+  review_score ~ sales + length,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_6)
+mcmc_dens_overlay(vgame_model_6)
+mcmc_acf(vgame_model_6)
+```
+
+```{r}
+tidy(vgame_model_6, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+
+```{r}
+# Model 7: X = genres + console
+vgame_model_7 <- stan_glm(
+  review_score ~ genres + console,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_7)
+mcmc_dens_overlay(vgame_model_7)
+mcmc_acf(vgame_model_7)
+```
+
+```{r}
+tidy(vgame_model_7, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+
+```{r}
+# Model 8: X = genres + console + genres:console
+vgame_model_8 <- stan_glm(
+  review_score ~ genres + console + genres:console,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_8)
+mcmc_dens_overlay(vgame_model_8)
+mcmc_acf(vgame_model_8)
+```
+
+```{r}
+tidy(vgame_model_8, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+```{r}
+ggplot(vgames_df, aes(y=review_score, x=console, color=genres)) +
+  geom_boxplot()
+```
+
+
+```{r}
+# Model 9: X = genres + sales
+vgame_model_9 <- stan_glm(
+  review_score ~ genres + sales,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_9)
+mcmc_dens_overlay(vgame_model_9)
+mcmc_acf(vgame_model_9)
+```
+
+```{r}
+tidy(vgame_model_9, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+
+```{r}
+# Model 10: X = genres + sales + genres:sales
+vgame_model_10 <- stan_glm(
+  review_score ~ genres + sales + genres:sales,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_10)
+mcmc_dens_overlay(vgame_model_10)
+mcmc_acf(vgame_model_10)
+```
+
+```{r}
+tidy(vgame_model_10, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+
+```{r}
+ggplot(vgames_df, aes(y=review_score, x=sales, color=genres)) +
+  geom_point(size=0.5) +
+  geom_smooth(method="lm", se=FALSE)
+```
+
+
+```{r}
+# Model 11: X = everything
+vgame_model_11 <- stan_glm(
+  review_score ~ .,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735)
+```
+
+```{r}
+mcmc_trace(vgame_model_11)
+mcmc_dens_overlay(vgame_model_11)
+mcmc_acf(vgame_model_11)
+```
+
+```{r}
+tidy(vgame_model_11, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
