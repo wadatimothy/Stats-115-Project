@@ -55,28 +55,28 @@ colSums(is.na(vgames_df))
 
 ```{r}
 ggplot(vgames_df, aes(x = length, y = review_score)) + 
-  geom_point(size = 0.5) + xlim(0,100)
+  geom_point(size = 0.5) + xlim(0,100) + ggtitle(" Game Review Score vs. Game Length")
 ```
 
 ```{r}
 ggplot(vgames_df, aes(x = sales, y = review_score)) + 
-  geom_point(size = 0.5)
+  geom_point(size = 0.5) + ggtitle(" Game Review Score vs. Game Sales")
 ```
 
 ```{r}
-ggplot(vgames_df, aes(x=review_score)) + geom_histogram()
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + ggtitle("Review Score Histogram")
 ```
 
 ```{r}
-ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(genres ~ ., scales = "free")
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(genres ~ ., scales = "free") + ggtitle("Histograms for Genres")
 ```
 
 ```{r}
-ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(console ~ ., scales = "free")
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(console ~ ., scales = "free") + ggtitle("Histograms for Consoles")
 ```
 
 ```{r}
-ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ ., scales = "free")
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ ., scales = "free") + ggtitle("Histograms for Ratings")
 ```
 
 
