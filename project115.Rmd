@@ -23,12 +23,10 @@ vgames_df <- read.csv("./video_games.csv")
 vgames_df <- vgames_df %>% 
          rename(review_score = Metrics.Review.Score, console = Release.Console, 
          length = Length.All.PlayStyles.Average, genres = Metadata.Genres, 
-         multiplayer = Features.Max.Players, multiplatform = Features.Multiplatform., 
-         online = Features.Online.,sales = Metrics.Sales)
+         sales = Metrics.Sales, rating = Release.Rating)
 
 vgames_df <- vgames_df %>% 
-  select(review_score, console, length, genres, multiplayer, multiplatform, 
-         online, sales)
+  select(review_score, console, length, genres, sales, rating)
 
 head(vgames_df)
 ```
@@ -50,3 +48,167 @@ head(vgames_df)
 ```{r}
 colSums(is.na(vgames_df))
 ```
+
+```{r}
+ggplot(vgames_df, aes(x = review_score)) +
+  geom_histogram()
+```
+
+## Developing an informative prior
+
+Below are two data sets and their respective games list that contain review 
+scores. They come from two very large media platforms that are well known for 
+video game reviews and therefore serve as an excellent way to develop some prior 
+expectations.
+
+Both data sets are from Kaggle and represent a repository of game reviews from 
+Metacritic and Steam. The Metacritic data set contains both a metascore based 
+on journalist reviews and a user score based on user reviews. The Steam data set
+contains only user review scores. 
+
+Link to metacritic data set: 
+https://www.kaggle.com/datasets/henrylin03/metacritic-games-user-reviews-and-metascores
+
+Link to steam data set:
+https://www.kaggle.com/datasets/andrewmvd/steam-reviews
+
+### Metacritic 
+
+```{r}
+# Removing rows that do not feature a recorded review score or is na
+metacritic_df <- read.csv("../prior_datasets/metacritic_game_reviews.csv")
+metacritic_df <- drop_na(metacritic_df)
+
+# removed rows in metascore that do not have a digit and converted column to 
+# integer
+metacritic_df <- metacritic_df[metacritic_df$metascore != "tbd", ]
+metacritic_df$metascore <- as.integer(metacritic_df$metascore)
+
+# removed rows in user score that do not have a digit and converted column to 
+# integer
+metacritic_df <- metacritic_df[metacritic_df$userscore != "tbd", ]
+metacritic_df$userscore <- as.integer(metacritic_df$userscore)
+
+# convert userscore to scale of 0 - 100 (note:user score 0 - 10 default)
+metacritic_df$userscore <- round(metacritic_df$userscore * 10, 0)
+```
+
+#### Journalist score
+
+```{r}
+ggplot(metacritic_df, aes(x = metascore)) +
+  geom_histogram()
+```
+
+```{r}
+summary(metacritic_df$metascore)
+```
+
+```{r}
+metacritic_df %>%
+  summarise(variance = var(metascore), standard_deviation =  sd(metascore))
+```
+
+
+```{r}
+# See platform specific average review ratings
+metascore_platforms <- metacritic_df %>%
+  group_by(platform) %>%
+  summarise(average_platform_metascore = mean(metascore))
+
+summary(metascore_platforms$average_platform_metascore)
+```
+
+
+```{r}
+ggplot(metascore_platforms, aes(x = average_platform_metascore)) + 
+  geom_histogram(binwidth = 1)
+```
+
+
+#### User score
+
+```{r}
+ggplot(metacritic_df, aes(x = userscore)) +
+  geom_histogram(binwidth = 10)
+```
+
+```{r}
+summary(metacritic_df$userscore)
+```
+
+```{r}
+metacritic_df %>%
+  summarise(variance = var(userscore), standard_deviation =  sd(userscore))
+```
+
+
+```{r}
+metacritic_platforms_user <- metacritic_df %>%
+  group_by(platform) %>%
+  summarise(average_platform_userscore = mean(userscore))
+
+summary(metacritic_platforms_user$average_platform_userscore)
+```
+
+```{r}
+ggplot(metacritic_platforms_user, aes(x = average_platform_userscore)) + 
+  geom_histogram(binwidth = 1)
+```
+
+
+### Steam review scores
+
+```{r}
+steam_df <- read.csv("../prior_datasets/steam_reviews_dataset.csv")
+steam_df <- drop_na(steam_df)
+```
+
+```{r}
+# Group and add reviews based on positive sentiment
+
+steam_df <- steam_df %>%
+  group_by(app_name) %>%
+  summarise(score = round((sum(review_score == 1) / n())*100), 0)
+```
+
+```{r}
+ggplot(steam_df, aes(x = score)) +
+  geom_histogram()
+```
+
+
+```{r}
+summary(steam_df$score)
+```
+
+
+```{r}
+steam_df %>%
+  summarise(variance = var(score), standard_deviation =  sd(score))
+```
+
+
+## Chosen Pior 
+
+We see that the average reviews for Metacritic's journalist score and user score 
+are approximately 70.84 and 64.19, respectively. Furthermore, Steam's user score 
+mean was 72.73. Taking the mean of these respective scores we get a score of 
+69.25.
+
+We get a variance of 161.5068	for Metacritics metascore, 207.0729	for 
+Metacritic's userscore and 459.8953 for Steam's userscore. The overall mean of 
+the variance of these three scores is 276.1583. 
+
+Lastly, Metacritic's average review across different platforms highlights a 
+difference in scores based on the platform. This could suggest that game review
+scores can be helped estimated based on the console the game was on. 
+
+Overall then, our stated prior would include a mean of 69.25 and a variance of 
+276.1583. Given the 
+
+**Data:** \(Y_i| \beta_0, \beta_1\, \beta_2, \beta_3, \beta_4, \beta_5, \sigma\)
+\(~ N(\mu_i, \sigma^2)\)  with \(\mu_i\ = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} 
++ \beta_3X_{i3} + \beta_4X_{i4} +\beta_5X_{i5}\)
+
+**Prior**: \(\beta_{0c}\) ~ \(N(69.25, 16.618^2)\)
