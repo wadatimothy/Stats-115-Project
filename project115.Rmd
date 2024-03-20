@@ -398,3 +398,52 @@ mcmc_acf(vgame_model_11)
 tidy(vgame_model_11, effects = c("fixed", "aux"),
      conf.int = TRUE, conf.level = 0.95)
 ```
+
+
+```{r}
+new_game_1 <- data.frame(
+  genres = factor("Adventure", levels = c("Action", "Adventure", "Strategy", "Sports")),
+  console = factor("Nintendo DS", levels = c("Nintendo DS", "Sony PSP", "PlayStation 3")))
+posterior_predictive <- posterior_predict(vgame_model_7, newdata = new_game_1)
+predictions <- predict(vgame_model_7, newdata = new_game_1, type = "response")
+predicted_score <- mean(posterior_predictive)
+simulated_reviewscore <- as.data.frame(posterior_predictive)
+ggplot(simulated_reviewscore, aes(x = simulated_reviewscore[[1]])) + 
+  geom_density(fill = "blue") +
+  labs(x = "Predicted Review Score", title = "Predicted Review Scores for Adventure Game in Nintendo DS")
+```
+
+
+```{r}
+new_game_2 <- data.frame(
+  genres = factor("Action", levels = c("Action", "Adventure", "Strategy", "Sports")),
+  sales = 1 
+)
+
+posterior_predictive_2 <- posterior_predict(vgame_model_9, newdata = new_game_2)
+predictions_2 <- predict(vgame_model_9, newdata = new_game_2, type = "response")
+predicted_score_2 <- mean(posterior_predictive_2)
+simulated_reviewscore_2 <- as.data.frame(posterior_predictive_2)
+ggplot(simulated_reviewscore_2, aes(x = simulated_reviewscore_2[[1]])) +  
+  geom_density(fill = "blue") +
+  labs(x = "Predicted Review Score", title = "Predicted Review Scores for Action Game with Sales = 1")
+```
+
+```{r}
+new_game_3 <- data.frame(
+  genres = factor("Sports", levels = c("Action", "Adventure", "Strategy", "Sports")),
+  sales = 1,
+  console = factor("Sony PSP", levels = c("Nintendo DS", "Sony PSP", "PlayStation 3")),
+  length = 10,
+  rating = factor("E", levels = c("E", "T", "M"))
+)
+
+posterior_predictive_3 <- posterior_predict(vgame_model_11, newdata = new_game_3)
+predictions_3 <- predict(vgame_model_11, newdata = new_game_3, type = "response")
+predicted_score_3 <- mean(posterior_predictive_3)
+simulated_reviewscore_3 <- as.data.frame(posterior_predictive_3)
+ggplot(simulated_reviewscore_3, aes(x = simulated_reviewscore_3[[1]])) +  
+  geom_density(fill = "blue") +
+  labs(x = "Predicted Review Score", title = "Predicted Review Scores for Sports Game with Sales = 1, Rating E, and length 10 minutes using Sony PSP")
+```
+
