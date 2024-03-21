@@ -229,6 +229,16 @@ ign_genres <- ign_df %>%
 summary(ign_genres)
 ```
 
+
+
+```{r}
+ggplot(ign_genres, aes(x = Score)) +
+  geom_histogram(binwidth = 10)
+
+```
+
+
+
 ```{r}
 ign_genres %>% 
   summarise(var = var(Score), sd = sd(Score))
