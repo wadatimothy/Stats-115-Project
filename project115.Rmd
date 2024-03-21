@@ -80,6 +80,22 @@ ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ 
 ```
 
 
+### intercept prior
+We see that the average reviews for Metacritic's journalist score and user score 
+are approximately 70.84 and 64.19, respectively. Furthermore, Steam's user score 
+mean was 72.73. Taking the mean of these respective scores we get a score of 
+69.25.
+
+We get a variance of 161.5068	for Metacritics metascore, 207.0729	for 
+Metacritic's userscore and 459.8953 for Steam's userscore. The overall mean of 
+the variance of these three scores is 276.1583. 
+
+Overall then, our stated prior would include a mean of 69.25 and a variance of 
+276.1583. 
+
+**intercept prior**: N(u = 69.25, sigma = 16.618)
+
+
 ```{r}
 # Using a Normal Regression
 # Priors:
