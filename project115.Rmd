@@ -83,7 +83,7 @@ ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ 
 ```{r}
 # Using a Normal Regression
 # Priors:
-#   Normal(70,10) for Beta_0c
+#   Normal(69.25, 16.618) for Beta_0c
 #   Vague priors for the other betas
 #   Vague prior for sigma
 # Model 1: X = genres
@@ -91,8 +91,8 @@ ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ 
 vgame_model_1 <- stan_glm(
   review_score ~ genres,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -128,8 +128,8 @@ as.data.frame(vgame_model_1) %>%
 vgame_model_2 <- stan_glm(
   review_score ~ sales,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -159,8 +159,8 @@ vgames_df %>%
 vgame_model_3 <- stan_glm(
   review_score ~ length,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -192,8 +192,8 @@ vgames_df %>%
 vgame_model_4 <- stan_glm(
   review_score ~ console,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -225,8 +225,8 @@ as.data.frame(vgame_model_4) %>%
 vgame_model_5 <- stan_glm(
   review_score ~ rating,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -255,8 +255,8 @@ as.data.frame(vgame_model_5) %>%
 vgame_model_6 <- stan_glm(
   review_score ~ sales + length,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -278,8 +278,8 @@ tidy(vgame_model_6, effects = c("fixed", "aux"),
 vgame_model_7 <- stan_glm(
   review_score ~ genres + console,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -301,8 +301,8 @@ tidy(vgame_model_7, effects = c("fixed", "aux"),
 vgame_model_8 <- stan_glm(
   review_score ~ genres + console + genres:console,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -329,8 +329,8 @@ ggplot(vgames_df, aes(y=review_score, x=console, color=genres)) +
 vgame_model_9 <- stan_glm(
   review_score ~ genres + sales,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -352,8 +352,8 @@ tidy(vgame_model_9, effects = c("fixed", "aux"),
 vgame_model_10 <- stan_glm(
   review_score ~ genres + sales + genres:sales,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
@@ -382,8 +382,8 @@ ggplot(vgames_df, aes(y=review_score, x=sales, color=genres)) +
 vgame_model_11 <- stan_glm(
   review_score ~ .,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(70, 10),
-  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735)
 ```
