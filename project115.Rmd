@@ -49,6 +49,7 @@ head(vgames_df)
 ```
 
 
+
 ```{r}
 colSums(is.na(vgames_df))
 ```
@@ -78,6 +79,7 @@ ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(console ~
 ```{r}
 ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ ., scales = "free") + ggtitle("Histograms for Ratings")
 ```
+
 
 
 ## Developing an informative prior
@@ -220,6 +222,7 @@ Overall then, our stated prior would include a mean of 69.25 and a variance of
 276.1583. 
 
 **intercept prior**: N(u = 69.25, sigma = 16.618)
+
 
 
 ```{r}
@@ -542,6 +545,7 @@ tidy(vgame_model_11, effects = c("fixed", "aux"),
 ```
 
 
+
 ```{r}
 new_game_1 <- data.frame(
   genres = factor("Adventure", levels = c("Action", "Adventure", "Strategy", "Sports")),
@@ -587,5 +591,13 @@ simulated_reviewscore_3 <- as.data.frame(posterior_predictive_3)
 ggplot(simulated_reviewscore_3, aes(x = simulated_reviewscore_3[[1]])) +  
   geom_density(fill = "blue") +
   labs(x = "Predicted Review Score", title = "Predicted Review Scores for Sports Game with Sales = 1, Rating E, and length 10 minutes using Sony PSP")
+```
+
+```{r}
+loo4 <- loo(vgame_model_4)
+loo7 <- loo(vgame_model_7)
+loo11 <- loo(vgame_model_11)
+
+loo_compare(loo4, loo7, loo11)
 ```
 
