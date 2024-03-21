@@ -60,9 +60,9 @@ for (row in 1:nrow(vgames_df)) {
 
 # Priors
 
-In our pursuit for coming up with informative priors for our analysis, We leveraged 3 different data sets and news reports/articles to formulate our expectations.
+In our pursuit for coming up with informative priors for our analysis, We leveraged 2 different data sets:
 
--   the three data sets came from sources Metacritic, Steam, IGN.
+-   the two data sets came from sources Metacritic and Steam.
 -   Some of these datasets consisted of journalist review scores or/and userscores
 
 # Priors: Intercept
@@ -78,38 +78,6 @@ What we found:
 -   [average userscore on steam](./img/ave_steam_userscore.png)
 
 -   prior model: (N(69.25, 16.618\^2))
-
-# Platforms
-
-We used the Metacritic data set to formulate our prior by looking at both the metascore and userscore:
-
--   [average metascore by platform](./img/metascore_platform.png)
-
--   [average userscore by platform](./img/ave_meta_userscore_platform.png)
-
--   Prior model: (N(68.485, 3.5825\^2))
-
-# Genres
-
-We used the IGN dataset to inform us of a generalized prior:
-
--   [ign genre distribution](./img/ave_ign_genres_score.png)
-
--   Prior model: (N(65.81,11.33\^2))
-
-# Sales
-
--   As an outlet for our prior, we leveraged several online articles. Of note, we found that the average sales of a video game were 277,500.
-
--   Without an explicit variance, we used a a heuristic to approximate a variance of 197,500
-
--   Thus, our chosen prior model: (N(277,500,197,500\^2))
-
-# Rating & Game Length
-
-Upon review of literature from external sources, we have chosen to go with vague priors for both of these features. This is due to information informing us that there may be no connection between average review scores and their rating or game length. Thus:
-
--   vague prior: (N(0, 5))
 
 ## Observation Plots
 
@@ -162,7 +130,7 @@ vgame_model_4 <- stan_glm(
   review_score ~ console,
   data = vgames_df, family = gaussian,
   prior_intercept = normal(69.25, 16.618),
-  prior = normal(68.485, 3.5825),
+  prior = normal(0, 5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
   chains=4, iter=5000*2, seed=84735, refresh = FALSE)
 ```
@@ -233,6 +201,20 @@ tidy(vgame_model_11, effects = c("fixed", "aux"),
 ```
 
 ------------------------------------------------------------------------
+
+---
+
+## Model Comparison
+
+```{r}
+loo4 <- loo(vgame_model_4)
+loo7 <- loo(vgame_model_7)
+loo11 <- loo(vgame_model_11)
+
+loo_compare(loo4, loo7, loo11)
+```
+
+---
 
 ## Prediction Process
 
