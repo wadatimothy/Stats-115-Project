@@ -80,6 +80,96 @@ ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ 
 ```
 
 
+## Developing an informative prior
+
+Below are 2 data sets and their respective games list that contain review 
+scores. They come from a very large media platform that is well known for 
+video game reviews and therefore serve as an excellent way to develop some prior 
+expectations.
+
+The data sets are from Kaggle where the data scourced is from Metacritic and 
+Steam. The Metacritic data set contains a metascore based on journalist reviews and 
+a user score based on user reviews. The Steam data set contains only user review scores. 
+
+Link to metacritic data set: 
+https://www.kaggle.com/datasets/henrylin03/metacritic-games-user-reviews-and-metascores
+
+Link to steam data set:
+https://www.kaggle.com/datasets/andrewmvd/steam-reviews
+
+### Metacritic 
+
+```{r}
+# Removing rows that do not feature a recorded review score or is na
+metacritic_df <- read.csv("../prior_datasets/metacritic_game_reviews.csv")
+metacritic_df <- drop_na(metacritic_df)
+
+# removed rows in metascore that do not have a digit and converted column to 
+# integer
+metacritic_df <- metacritic_df[metacritic_df$metascore != "tbd", ]
+metacritic_df$metascore <- as.integer(metacritic_df$metascore)
+
+# removed rows in user score that do not have a digit and converted column to 
+# integer
+metacritic_df <- metacritic_df[metacritic_df$userscore != "tbd", ]
+metacritic_df$userscore <- as.integer(metacritic_df$userscore)
+
+# convert userscore to scale of 0 - 100 (note:user score 0 - 10 default)
+metacritic_df$userscore <- round(metacritic_df$userscore * 10, 0)
+```
+
+#### User score
+
+```{r}
+ggplot(metacritic_df, aes(x = userscore)) +
+  geom_histogram(binwidth = 10)
+```
+
+```{r}
+summary(metacritic_df$userscore)
+```
+
+```{r}
+metacritic_df %>%
+  summarise(variance = var(userscore), standard_deviation =  sd(userscore))
+```
+
+```{r}
+ggplot(metacritic_platforms_user, aes(x = average_platform_userscore)) + 
+  geom_histogram(binwidth = 1)
+```
+
+### Steam review scores
+
+```{r}
+steam_df <- read.csv("../prior_datasets/steam_reviews_dataset.csv")
+steam_df <- drop_na(steam_df)
+```
+
+```{r}
+# Group and add reviews based on positive sentiment
+
+steam_df <- steam_df %>%
+  group_by(app_name) %>%
+  summarise(score = round((sum(review_score == 1) / n())*100), 0)
+```
+
+```{r}
+ggplot(steam_df, aes(x = score)) +
+  geom_histogram()
+```
+
+
+```{r}
+summary(steam_df$score)
+```
+
+
+```{r}
+steam_df %>%
+  summarise(variance = var(score), standard_deviation =  sd(score))
+```
+
 ### intercept prior
 We see that the average reviews for Metacritic's journalist score and user score 
 are approximately 70.84 and 64.19, respectively. Furthermore, Steam's user score 
