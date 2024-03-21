@@ -76,29 +76,34 @@ tidy(vgame_model_7, effects = c("fixed", "aux"),
 
 ---
 
-## Model 9: X = Genres + Sales
+## Model 4: Console
 ```{r}
-# Model 9: X = genres + sales
-vgame_model_9 <- stan_glm(
-  review_score ~ genres + sales,
+# Model 4: X = console
+vgame_model_4 <- stan_glm(
+  review_score ~ console,
   data = vgames_df, family = gaussian,
-  prior_intercept = normal(69.25, 16.618),
-  prior = normal(0, 5, autoscale = TRUE),
+  prior_intercept = normal(70, 10),
+  prior = normal(0, 2.5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
-  chains=4, iter=5000*2, seed=84735, refresh=FALSE)
+  chains=4, iter=5000*2, seed=84735, refresh = FALSE)
 ```
 
 ---
 
 ```{r}
-ggplot(vgames_df, aes(y=review_score, x=sales, color=genres)) +
-  geom_point(size=0.75)
+as.data.frame(vgame_model_4) %>%
+  mutate(DS = `(Intercept)`,
+         Wii = `(Intercept)` + `consoleNintendo Wii`,
+         PS3 = `(Intercept)` + `consolePlayStation 3`,
+         PSP = `(Intercept)` + `consoleSony PSP`,
+         X360 = `(Intercept)` + consoleX360) %>%
+  mcmc_areas(pars = c("DS", "Wii", "PS3", "PSP", "X360"))
 ```
 
 ---
 
 ```{r}
-tidy(vgame_model_9, effects = c("fixed", "aux"),
+tidy(vgame_model_4, effects = c("fixed", "aux"),
      conf.int = TRUE, conf.level = 0.95)
 ```
 
