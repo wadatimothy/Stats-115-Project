@@ -118,6 +118,36 @@ metacritic_df$userscore <- as.integer(metacritic_df$userscore)
 metacritic_df$userscore <- round(metacritic_df$userscore * 10, 0)
 ```
 
+#### Journalist score
+
+```{r}
+ggplot(metacritic_df, aes(x = metascore)) +
+  geom_histogram()
+```
+
+```{r}
+summary(metacritic_df$metascore)
+```
+
+```{r}
+metacritic_df %>%
+  summarise(variance = var(metascore), standard_deviation =  sd(metascore))
+```
+
+```{r}
+# See platform specific average review ratings
+metascore_platforms <- metacritic_df %>%
+  group_by(platform) %>%
+  summarise(average_platform_metascore = mean(metascore))
+
+summary(metascore_platforms$average_platform_metascore)
+```
+
+```{r}
+ggplot(metascore_platforms, aes(x = average_platform_metascore)) + 
+  geom_histogram(binwidth = 1)
+```
+
 #### User score
 
 ```{r}
@@ -134,6 +164,15 @@ metacritic_df %>%
   summarise(variance = var(userscore), standard_deviation =  sd(userscore))
 ```
 
+
+```{r}
+userscore_platforms <- metacritic_df %>%
+  group_by(platform) %>%
+  summarise(average_platform_userscore = mean(userscore))
+
+summary(userscore_platforms)
+```
+
 ```{r}
 ggplot(metacritic_platforms_user, aes(x = average_platform_userscore)) + 
   geom_histogram(binwidth = 1)
@@ -148,7 +187,6 @@ steam_df <- drop_na(steam_df)
 
 ```{r}
 # Group and add reviews based on positive sentiment
-
 steam_df <- steam_df %>%
   group_by(app_name) %>%
   summarise(score = round((sum(review_score == 1) / n())*100), 0)
@@ -159,11 +197,9 @@ ggplot(steam_df, aes(x = score)) +
   geom_histogram()
 ```
 
-
 ```{r}
 summary(steam_df$score)
 ```
-
 
 ```{r}
 steam_df %>%
