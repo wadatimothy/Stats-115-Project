@@ -1,0 +1,365 @@
+---
+title: "Video Games"
+subtitle: "Timmy Wada, Alfonso Vieyra, Janice Wijaya, Karis Park"
+format: revealjs
+editor: visual
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(bayesrules)
+library(dplyr)
+library(tidyverse)
+library(rstanarm)
+library(bayesplot)
+library(broom.mixed)
+library(tidybayes)
+vgames_df <- read.csv("./video_games.csv")
+# reading the data in as a dataframe but then reassign data frame with the 
+# variables = review_score, console, length, genres, sales where response 
+# is review score
+
+vgames_df <- vgames_df %>% 
+         rename(review_score = Metrics.Review.Score, console = Release.Console, 
+         length = Length.All.PlayStyles.Average, genres = Metadata.Genres, 
+         sales = Metrics.Sales, rating=Release.Rating)
+
+vgames_df <- vgames_df %>% 
+  select(review_score, console, length, genres, sales, rating)
+
+# Changes genres into a single genre
+for (row in 1:nrow(vgames_df)) {
+  genres <- strsplit(vgames_df$genres[row], split = ",", fixed = TRUE)[[1]]
+  if(length(genres) > 0) { 
+    i <- sample(length(genres), 1) 
+    vgames_df$genres[row] <- genres[i]
+  }
+}
+
+```
+
+
+# Intro
+
+-   Video games have been around for decades since the days of the regular Nintendo where it was first released in the 80s.
+
+-   The market of video games has become a multi-billion dollar industry
+
+-   Video games have risen in cost which has made buying a video game to become a much more weighted decision for the average consumer
+
+-   Review scores influence customer buying options, and so developer interests about what games to make is an important market decision
+
+-   Esports is becoming a much more popular activity across mainstream entertainment
+
+# Research Goals
+
+-   We are hoping for this project endeavor to achieve two main objectives:
+
+    -   Provide strong inference from our chosen features about how well video game is expected to be scored.
+    -   Provide key insights for key stakeholders
+
+# Priors
+
+In our pursuit for coming up with informative priors for our analysis, We leveraged 3 different data sets and news reports/articles to formulate our expectations.
+
+-   the three data sets came from sources Metacritic, Steam, IGN.
+-   Some of these datasets consisted of journalist review scores or/and userscores
+
+# Priors: Intercept
+
+Of the most assured priors, we used metacritic and steam to formulate our priors for reviews scores and platforms.
+
+What we found:
+
+-   [average metascore](./img/ave_metascore.png)
+
+-   [average userscore on metacritic](./img/ave_meta_userscore.png)
+
+-   [average userscore on steam](./img/ave_steam_userscore.png)
+
+-   prior model: (N(69.25, 16.618\^2))
+
+# Platforms
+
+We used the Metacritic data set to formulate our prior by looking at both the metascore and userscore:
+
+-   [average metascore by platform](./img/metascore_platform.png)
+
+-   [average userscore by platform](./img/ave_meta_userscore_platform.png)
+
+-   Prior model: (N(68.485, 3.5825\^2))
+
+# Genres
+
+We used the IGN dataset to inform us of a generalized prior:
+
+-   [ign genre distribution](./img/ave_ign_genres_score.png)
+
+-   Prior model: (N(65.81,11.33\^2))
+
+# Sales
+
+-   As an outlet for our prior, we leveraged several online articles. Of note, we found that the average sales of a video game were 277,500.
+
+-   Without an explicit variance, we used a a heuristic to approximate a variance of 197,500
+
+-   Thus, our chosen prior model: (N(277,500,197,500\^2))
+
+# Rating & Game Length
+
+Upon review of literature from external sources, we have chosen to go with vague priors for both of these features. This is due to information informing us that there may be no connection between average review scores and their rating or game length. Thus:
+
+-   vague prior: (N(0, 5))
+
+## Observation Plots
+
+
+```{r}
+ggplot(vgames_df, aes(x = length, y = review_score)) + 
+  geom_point(size = 0.5) + xlim(0,100) + ggtitle(" Game Review Score vs. Game Length")
+
+```
+
+
+## Observation Plots
+
+
+```{r}
+ggplot(vgames_df, aes(x = sales, y = review_score)) + 
+  geom_point(size = 0.5) + ggtitle(" Game Review Score vs. Game Sales")
+```
+
+
+## Observation Plots
+
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + ggtitle("Review Score Histogram")
+
+```
+
+
+## Observation Plots
+
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(genres ~ ., scales = "free") + ggtitle("Histograms for Genres")
+```
+
+
+## Observation Plots
+
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(console ~ ., scales = "free") + ggtitle("Histograms for Consoles")
+```
+
+
+## Observation Plots
+
+
+```{r}
+ggplot(vgames_df, aes(x=review_score)) + geom_histogram() + facet_wrap(rating ~ ., scales = "free") + ggtitle("Histograms for Ratings")
+```
+
+
+------------------------------------------------------------------------
+
+## Model 4: Console
+
+
+```{r}
+# Model 4: X = console
+
+vgame_model_4 <- stan_glm(
+  review_score ~ console,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(68.485, 3.5825),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735, refresh = FALSE)
+```
+
+
+------------------------------------------------------------------------
+
+
+```{r}
+as.data.frame(vgame_model_4) %>%
+  mutate(DS = `(Intercept)`,
+         Wii = `(Intercept)` + `consoleNintendo Wii`,
+         PS3 = `(Intercept)` + `consolePlayStation 3`,
+         PSP = `(Intercept)` + `consoleSony PSP`,
+         X360 = `(Intercept)` + consoleX360) %>%
+  mcmc_areas(pars = c("DS", "Wii", "PS3", "PSP", "X360"))
+
+```
+
+
+------------------------------------------------------------------------
+
+
+```{r}
+tidy(vgame_model_4, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+
+------------------------------------------------------------------------
+
+## Model 7: Genres + Console
+
+
+```{r}
+# Model 7: X = genres + console
+vgame_model_7 <- stan_glm(  review_score ~ genres + console,  data = vgames_df, family = gaussian,  prior_intercept = normal(69.25, 16.618),  prior = normal(0, 5, autoscale = TRUE),  prior_aux = exponential(1, autoscale = TRUE),  chains=4, iter=5000*2, seed=84735, refresh=FALSE)
+
+```
+
+
+------------------------------------------------------------------------
+
+
+```{r}
+ggplot(vgames_df, aes(y=review_score, x=console, color=genres)) +
+  geom_boxplot()
+```
+
+
+------------------------------------------------------------------------
+
+
+```{r}
+tidy(vgame_model_7, effects = c("fixed", "aux"), conf.int = TRUE, conf.level = 0.95)
+```
+
+
+------------------------------------------------------------------------
+
+## Model 11: All Predictors
+
+
+```{r}
+# Model 11: X = everything
+vgame_model_11 <- stan_glm(
+  review_score ~ .,
+  data = vgames_df, family = gaussian,
+  prior_intercept = normal(69.25, 16.618),
+  prior = normal(0, 5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains=4, iter=5000*2, seed=84735, refresh=FALSE)
+```
+
+
+------------------------------------------------------------------------
+
+
+```{r}
+tidy(vgame_model_11, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+
+------------------------------------------------------------------------
+
+## Prediction Process
+
+How did we predict the future review scores ?
+
+-   Create new data frame
+-   Making posterior predictive check
+-   Make predictions
+-   Calculate mean prediction score
+-   Convert posterior prediction
+-   Plot
+
+## Future Predictions
+
+------------------------------------------------------------------------
+
+Game 1
+
+
+```{r}
+new_game_1 <- data.frame(
+  genres = factor("Adventure", levels = c("Action", "Adventure", "Strategy", "Sports")),
+  console = factor("Nintendo DS", levels = c("Nintendo DS", "Sony PSP", "PlayStation 3")))
+posterior_predictive <- posterior_predict(vgame_model_7, newdata = new_game_1)
+predictions <- predict(vgame_model_7, newdata = new_game_1, type = "response")
+predicted_score <- mean(posterior_predictive)
+simulated_reviewscore <- as.data.frame(posterior_predictive)
+```
+
+
+------------------------------------------------------------------------
+
+Game 1
+
+
+```{r}
+ggplot(simulated_reviewscore, aes(x = simulated_reviewscore[[1]])) + 
+  geom_density(fill = "blue") +
+  labs(x = "Predicted Review Score", title = "Predicted Review Scores for Adventure Game in Nintendo DS")
+```
+
+
+------------------------------------------------------------------------
+
+Game 2
+
+
+```{r}
+new_game_2 <- data.frame(
+  console = factor("Sony PSP", levels = c("Nintendo DS", "Sony PSP", "PlayStation 3")))
+
+posterior_predictive_2 <- posterior_predict(vgame_model_4, newdata = new_game_2)
+predictions_2 <- predict(vgame_model_4, newdata = new_game_2, type = "response")
+predicted_score_2 <- mean(posterior_predictive_2)
+simulated_reviewscore_2 <- as.data.frame(posterior_predictive_2)
+```
+
+
+------------------------------------------------------------------------
+
+Game 2
+
+
+```{r}
+ggplot(simulated_reviewscore_2, aes(x = simulated_reviewscore_2[[1]])) +
+  geom_density(fill = "blue") +
+  labs(x = "Predicted Review Score", title = "Predicted Review Scores for Sony PSP")
+```
+
+
+------------------------------------------------------------------------
+
+Game 3
+
+
+```{r}
+new_game_3 <- data.frame(
+  genres = factor("Sports", levels = c("Action", "Adventure", "Strategy", "Sports")),
+  sales = 1,
+  console = factor("Sony PSP", levels = c("Nintendo DS", "Sony PSP", "PlayStation 3")),
+  length = 10,
+  rating = factor("E", levels = c("E", "T", "M"))
+)
+posterior_predictive_3 <- posterior_predict(vgame_model_11, newdata = new_game_3)
+predictions_3 <- predict(vgame_model_11, newdata = new_game_3, type = "response")
+predicted_score_3 <- mean(posterior_predictive_3)
+simulated_reviewscore_3 <- as.data.frame(posterior_predictive_3)
+```
+
+
+------------------------------------------------------------------------
+
+Game 3
+
+
+```{r}
+ggplot(simulated_reviewscore_3, aes(x = simulated_reviewscore_3[[1]])) +  
+  geom_density(fill = "blue") +
+  labs(x = "Predicted Review Score", title = "Predicted Review Scores for Sports Game with Sales = 1, Rating E, and length 10 minutes using Sony PSP")
+```
+
